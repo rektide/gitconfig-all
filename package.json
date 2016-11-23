@@ -1,0 +1,19 @@
+{
+	"name": "gitconfig-all",
+	"version": "1.0.0",
+	"description": "List or parse all gitconfigs for a user.",
+	"main": "gitconfig-all.js",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"keywords": ["git", "gitconfig"],
+	"author": "rektide de la faye",
+	"license": "X11",
+	"dependencies": {
+		"es6-promisify": "^5.0.0",
+		"findup": "^0.1.5",
+		"lodash.merge": "^4.6.0",
+		"parse-git-config": "^1.0.2",
+		"xdg-basedir": "^2.0.0"
+	}
+}
