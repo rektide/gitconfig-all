@@ -1,9 +1,11 @@
 #!/usr/bin/env node
+"use strict"
 
 var
+  access= require( "access-promise"),
   Findup= require( "findup"),
   os= require( "os"),
-  path= require( "path")
+  path= require( "path"),
   promisify= require( "es6-promisify"),
   xdgBasedir= require("xdg-basedir")
 
@@ -11,7 +13,7 @@ var
   findup= promisify( Findup)
 
 function system(){
-	var prefix= this.prefix|| module.exports.prefix
+	var prefix= this&& this.prefix|| module.exports.prefix
 	if(!prefix){
 		return "/etc/gitconfig"
 	}
@@ -37,7 +39,7 @@ function home(){
 
 function repo(){
 	var
-	  cwd= this&& this.cwd|| module.exports.cwd
+	  cwd= this&& this.cwd|| module.exports.cwd,
 	  gitdir= this&& this.gitdir|| module.exports.gitdir
 	cwd= cwd()
 	return findup( cwd, gitdir).then( function( repo){
@@ -50,7 +52,11 @@ function all(){
 	var
 	  _all= this&& this._all|| module.exports._all,
 	  values= _all.map( a=> a())
-	return exist
+	return Promise.all(values)
+}
+
+function exist( candidates){
+	return access.filter.apply( null, candidates)
 }
 
 module.exports.prefix= undefined // used by system
@@ -65,7 +71,8 @@ module.exports.xdg= xdg
 module.exports.home= home
 module.exports.repo= repo
 module.exports.all= all
+module.exports.exist= exist
 
 if( require.main=== module){
-	all().then( console.log)
+	all().then( exist).then( x=> console.log( x.join( "\n")))
 }
