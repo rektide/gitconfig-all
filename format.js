@@ -1,3 +1,5 @@
+"use strict"
+
 // This 'format' code snippet is from `gitconfiglocal`, url:
 // https://github.com/soldair/node-gitconfiglocal/blob/5a3ef7d1383993eac98ad59dfc1a61f92a23e120/index.js#L25
 

@@ -48,19 +48,21 @@ function repo(){
 	})
 }
 
-function all(){
+function all( fromDir){
 	var
 	  _all= this&& this._all|| module.exports._all,
-	  values= _all.map( a=> a())
-	return Promise.all(values)
+	  values= _all.map( a=> a( fromDir))
+	return Promise.all( values)
 }
 
 function exist( candidates){
 	return access.filter.apply( null, candidates)
 }
 
-function found(){
-	return all().then( exist)
+function found( fromDir){
+	return all().then( function( e){
+		return exist( e)
+	})
 }
 
 module.exports.prefix= undefined // used by system
@@ -76,6 +78,7 @@ module.exports.home= home
 module.exports.repo= repo
 module.exports.all= all
 module.exports.exist= exist
+module.exports.found= found
 
 if( require.main=== module){
 	found().then( x=> console.log( x.join( "\n")))

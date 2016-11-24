@@ -1,10 +1,11 @@
+"use strict"
+
 var
+  format= require( "./format"),
   fs= require( "fs"),
   ini= require( "ini"),
-  merge= require("lodash.merge"),
   PMap= require( "p-map"),
   source= require( "./source")
-
 
 function _pmap( mapper, options){
 	return function( input){
@@ -25,7 +26,10 @@ function _readFile( file){
 
 function _arrayitize( content){
 	return Promise.resolve( content).then(function( content){
-		if( content.length=== undefined){
+		if( content=== undefined){
+			return []
+		}
+		if( content.length=== undefined || typeof content == "string"){
 			return [ content]
 		}
 		return content
@@ -33,9 +37,8 @@ function _arrayitize( content){
 }
 
 function _arrayMerge( contents){
-	Promise.resolve( contents).then( function( contents){
-		var output= Array.prototype.concat.apply([], contents)
-		return output
+	return Promise.resolve( contents).then( function( contents){
+		return Array.prototype.concat.apply([], contents)
 	})
 }
 
@@ -45,8 +48,9 @@ function _arrayMerge( contents){
  * @returns a promise of an array of discovered gitignore files
  */
 function find( dir){
+	dir= dir|| ""
 	return _arrayitize( dir)
-		.then( _pMap( source.found))
+		.then( _pmap( source.found))
 		.then( _arrayMerge)
 }
 
@@ -57,7 +61,7 @@ function find( dir){
  */
 function read( found){
 	return _arrayitize( found)
-		.then( _pMap( _readFile))
+		.then( _pmap( _readFile))
 }
 
 /**
@@ -68,7 +72,7 @@ function read( found){
 function parse( content){
 	return _arrayitize( content)
 		.then( _pmap( function( content){
-			return format(ini.parse( content))
+			return format( ini.parse( content))
 		}))
 }
 
@@ -81,8 +85,7 @@ function merge( objects){
 	return _arrayitize( objects)
 		.then( function( content){
 			content.unshift({})
-			var output= Object.assign.apply(Object, content)
-			return output
+			return Object.assign.apply( Object, content)
 		})
 }
 
@@ -92,6 +95,13 @@ function gitconfigAll(){
 	  found= find(),
 	  texts= read( found),
 	  parsed= parse( texts),
-	  result= merge( parsed)
-	return result	 
+	  merged= merge( parsed)
+	return merged
 }
+
+module.exports= gitconfigAll
+module.exports.gitconfigAll= gitconfigAll
+module.exports.find= find
+module.exports.read= read
+module.exports.parse= parse
+module.exports.merge= merge
