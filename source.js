@@ -59,6 +59,10 @@ function exist( candidates){
 	return access.filter.apply( null, candidates)
 }
 
+function found(){
+	return all().then( exist)
+}
+
 module.exports.prefix= undefined // used by system
 module.exports.xdgBasedir= xdgBasedir
 module.exports.homedir= os.homedir // used by xdg and home
@@ -74,5 +78,5 @@ module.exports.all= all
 module.exports.exist= exist
 
 if( require.main=== module){
-	all().then( exist).then( x=> console.log( x.join( "\n")))
+	found().then( x=> console.log( x.join( "\n")))
 }
