@@ -4,6 +4,7 @@
 var
   access= require( "access-promise"),
   Findup= require( "findup"),
+  opt= require( "./opt"),
   os= require( "os"),
   path= require( "path"),
   promisify= require( "es6-promisify"),
@@ -12,74 +13,66 @@ var
 var
   findup= promisify( Findup)
 
-function system(){
-	var prefix= this&& this.prefix|| module.exports.prefix
-	if(!prefix){
-		return "/etc/gitconfig"
-	}
-	return path.join( prefix, "/etc/gitconfig")
+/**
+ * Check and return system /etc/gitconfig
+ */
+function system( options){
+	var prefix= opt( "prefix", options, this, module.exports.defaults)|| ""
+	return access(path.join( path.sep, prefix, "etc", "gitconfig"))
 }
 
-function xdg(){
-	var xdg= this&& this.xdgBasedir|| module.exports.xdgBasedir
-	if( !( xdg&& xdg.config)){
+/**
+ * Check and return path for $XDG_CONFIG_DIR/git/config
+ */
+function xdg( options){
+	var xdg= opt( "xdgBasedir", options, this, module.exports.defaults)
+	if( !xdg|| !xdg.config){
 		throw new Error( "xdg expected an xdgBasedir.config")
 	}
-	return path.join( xdgBasedir.config, "git", "config")
+	return access(path.join( xdg.config, "git", "config"))
 }
 
-function home(){
-	var home= this&& this.homedir|| module.exports.homedir
-	if( !home){
+/**
+ * Check and return path for ~/.gitconfig
+ */
+function home( options){
+	var homeDir= opt( "homeDir", options, this, module.exports.defaults)
+	if( !homeDir){
 		throw new Error( "home expected a homedir factory")
 	}
-	home= home()
-	return path.join( home, ".gitconfig")
+	return access(path.join( homeDir, ".gitconfig"))
 }
 
-function repo(){
+/**
+ * Look up for .git directory, check & return config
+ */
+function repo( options){
 	var
-	  cwd= this&& this.cwd|| module.exports.cwd,
-	  gitdir= this&& this.gitdir|| module.exports.gitdir
-	cwd= cwd()
+	  cwd= opt( "cwd", options, this, module.exports.defaults),
+	  gitdir= opt( "gitdir", options, this, module.exports.defaults)
+	if( !cwd){
+		throw new Error("repo expected a cwd")
+	}
+	if( !gitdir){
+		throw new Error("repo expected a gitdir")
+	}
 	return findup( cwd, gitdir).then( function( repo){
-		var config= path.join( cwd, gitdir, "config")
-		return config
+		var config= path.join( repo, gitdir, "config")
+		return access(config)
 	})
 }
 
-function all( fromDir){
-	var
-	  _all= this&& this._all|| module.exports._all,
-	  values= _all.map( a=> a( fromDir))
-	return Promise.all( values)
-}
-
-function exist( candidates){
-	return access.filter.apply( null, candidates)
-}
-
-function found( fromDir){
-	return all().then( function( e){
-		return exist( e)
-	})
-}
-
-module.exports.prefix= undefined // used by system
-module.exports.xdgBasedir= xdgBasedir
-module.exports.homedir= os.homedir // used by xdg and home
-module.exports.gitdir= ".git" // used by repo
-module.exports.cwd= process.cwd
-module.exports._all= [system, xdg, home, repo]
-
+// exports
 module.exports.system= system
 module.exports.xdg= xdg
 module.exports.home= home
 module.exports.repo= repo
-module.exports.all= all
-module.exports.exist= exist
-module.exports.found= found
 
-if( require.main=== module){
-	found().then( x=> console.log( x.join( "\n")))
+// defaults
+module.exports.defaults= {
+	prefix: undefined, // default git has no prefix
+	xdgBasedir: xdgBasedir,
+	homeDir: os.homedir, // used by xdg
+	gitdir: ".git", // used by repo
+	cwd: process.cwd
 }
